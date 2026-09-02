@@ -228,6 +228,6 @@ An interactive presentation deck is included in the project:
 
 
 
--**Made by**: Mandeep Singh
--**Vercel Link:** [https://frontend-eight-sepia-21.vercel.app/](https://frontend-eight-sepia-21.vercel.app/) 
+- **Made by**: Mandeep Singh
+- **Vercel Link:** [https://frontend-eight-sepia-21.vercel.app/](https://frontend-eight-sepia-21.vercel.app/) 
 
