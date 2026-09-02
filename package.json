@@ -1,0 +1,33 @@
+{
+  "name": "paytrust",
+  "version": "1.0.0",
+  "description": "PayTrust — Secure payments. Trustless milestones. Decentralized milestone escrow platform on Arbitrum.",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy": "hardhat run scripts/deploy.js",
+    "deploy:sepolia": "hardhat run scripts/deploy.js --network arbitrumSepolia",
+    "seed": "hardhat run scripts/seed.js",
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build"
+  },
+  "keywords": [
+    "solidity",
+    "arbitrum",
+    "escrow",
+    "smart-contracts",
+    "web3",
+    "ethereum",
+    "milestone-payments"
+  ],
+  "author": "PayTrust Protocol",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@openzeppelin/contracts": "^5.6.1",
+    "dotenv": "^16.4.7",
+    "hardhat": "^2.22.18"
+  }
+}
