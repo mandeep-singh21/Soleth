@@ -226,9 +226,8 @@ An interactive presentation deck is included in the project:
 - **Markdown Deck:** [`PRESENTATION.md`](./PRESENTATION.md)
 - **Interactive HTML Presentation:** Open [`presentation.html`](./presentation.html) in any browser to present the 10-slide pitch deck with keyboard navigation (`←` / `→`).
 
----
 
-## 13. Security Disclaimer
 
-> **Hackathon Prototype Disclaimer:**
-> This software is a hackathon prototype developed for educational and demonstration purposes. It has not been subjected to a formal security audit. Do not use this contract with real mainnet funds.
+--Made by: Mandeep Singh
+--Vercel Link: [https://frontend-eight-sepia-21.vercel.app/](https://frontend-eight-sepia-21.vercel.app/) 
+
