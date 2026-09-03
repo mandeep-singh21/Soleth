@@ -4,41 +4,64 @@
 
 @layer base {
   body {
-    @apply bg-[#080b11] text-slate-100 font-sans;
+    @apply bg-[#0e1017] text-slate-100 font-sans;
   }
 }
 
-.glass-panel {
-  background: rgba(17, 23, 38, 0.75);
-  backdrop-filter: blur(16px);
+/* Google Quad-Color Gradient */
+.google-gradient-bg {
+  background: linear-gradient(90deg, #4285F4 0%, #EA4335 33%, #FBBC04 66%, #34A853 100%);
+}
+
+.google-gradient-text {
+  background: linear-gradient(90deg, #4285F4 0%, #EA4335 33%, #FBBC04 66%, #34A853 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.gpay-card {
+  background: #171b24;
   border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+  transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
 }
 
-.glass-panel-hover:hover {
-  background: rgba(22, 31, 51, 0.85);
-  border-color: rgba(45, 212, 191, 0.25);
+.gpay-card:hover {
+  background: #1d222e;
+  border-color: rgba(66, 133, 244, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 20px rgba(66, 133, 244, 0.15);
 }
 
-.glow-teal {
-  box-shadow: 0 0 25px -5px rgba(20, 184, 166, 0.25);
+.gpay-pill {
+  @apply rounded-full px-4 py-2 text-xs font-semibold transition-all duration-200;
 }
 
-.glow-teal-strong {
-  box-shadow: 0 0 35px 0 rgba(45, 212, 191, 0.35);
+.gpay-btn-primary {
+  @apply bg-[#1a73e8] hover:bg-[#1557b0] active:bg-[#0d47a1] text-white rounded-full font-semibold shadow-md hover:shadow-lg transition-all transform active:scale-95;
 }
 
-/* Custom scrollbar */
+.gpay-btn-secondary {
+  @apply bg-[#232936] hover:bg-[#2b3343] active:bg-[#1d222e] text-slate-200 border border-white/10 rounded-full font-medium transition-all;
+}
+
+.gpay-input {
+  @apply bg-[#11141c] border border-white/10 rounded-2xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-[#4285F4] focus:ring-1 focus:ring-[#4285F4] transition-all font-sans;
+}
+
+/* Custom GPay Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0a0d14;
+  background: #0e1017;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
-  border-radius: 4px;
+  background: #2b3140;
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #4285F4;
 }

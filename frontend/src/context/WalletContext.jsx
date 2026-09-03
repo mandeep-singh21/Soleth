@@ -7,6 +7,9 @@ import {
   ARBITRUM_SEPOLIA_HEX,
   ARBITRUM_SEPOLIA_PARAMS,
   HARDHAT_CHAIN_ID,
+  DEFAULT_ARBITRUM_SEPOLIA_RPC,
+  DEFAULT_ARBISCAN_API_KEY,
+  DEMO_ACCOUNTS,
 } from '../utils/constants';
 
 const WalletContext = createContext(null);
@@ -21,6 +24,23 @@ export function WalletProvider({ children }) {
   const [contractOwner, setContractOwner] = useState(null);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isWrongNetwork, setIsWrongNetwork] = useState(false);
+
+  // Demo Wallet & Private Key Entry
+  const [isDemoWallet, setIsDemoWallet] = useState(false);
+  const [activeDemoAccount, setActiveDemoAccount] = useState(null);
+
+  // Custom RPC URL & Arbiscan API Key
+  const [rpcUrl, setRpcUrl] = useState(() => {
+    return localStorage.getItem('paytrust_rpc_url') || DEFAULT_ARBITRUM_SEPOLIA_RPC;
+  });
+  const [arbiscanApiKey, setArbiscanApiKey] = useState(() => {
+    return localStorage.getItem('paytrust_arbiscan_key') || DEFAULT_ARBISCAN_API_KEY;
+  });
+  const [networkHealth, setNetworkHealth] = useState({
+    isConnected: false,
+    pingMs: null,
+    blockNumber: null,
+  });
 
   // Protocol Stats & Projects
   const [projects, setProjects] = useState([]);
@@ -43,12 +63,56 @@ export function WalletProvider({ children }) {
     setToastMessage(null);
   }, []);
 
-  // Initialize Provider & Fallback
+  // Initialize Active Fallback RPC Provider
   const getFallbackProvider = useCallback(() => {
-    return new ethers.JsonRpcProvider(
-      ARBITRUM_SEPOLIA_PARAMS.rpcUrls[0]
-    );
-  }, []);
+    return new ethers.JsonRpcProvider(rpcUrl);
+  }, [rpcUrl]);
+
+  // Test and Ping RPC Network
+  const checkNetworkHealth = useCallback(async () => {
+    try {
+      const start = Date.now();
+      const testProv = new ethers.JsonRpcProvider(rpcUrl);
+      const block = await testProv.getBlockNumber();
+      const latency = Date.now() - start;
+      setNetworkHealth({
+        isConnected: true,
+        pingMs: latency,
+        blockNumber: block,
+      });
+      return { isConnected: true, latency, block };
+    } catch (err) {
+      console.warn('RPC Ping error:', err);
+      setNetworkHealth({
+        isConnected: false,
+        pingMs: null,
+        blockNumber: null,
+      });
+      return { isConnected: false, error: err.message };
+    }
+  }, [rpcUrl]);
+
+  // Update RPC URL with test
+  const updateRpcUrl = useCallback(async (newUrl) => {
+    try {
+      const testProv = new ethers.JsonRpcProvider(newUrl);
+      await testProv.getBlockNumber();
+      setRpcUrl(newUrl);
+      localStorage.setItem('paytrust_rpc_url', newUrl);
+      showToast('success', 'Arbitrum Sepolia RPC URL updated successfully!');
+      return true;
+    } catch (err) {
+      showToast('error', `RPC Connection Failed: ${err.message}`);
+      return false;
+    }
+  }, [showToast]);
+
+  // Update Arbiscan API Key
+  const updateArbiscanApiKey = useCallback((newKey) => {
+    setArbiscanApiKey(newKey);
+    localStorage.setItem('paytrust_arbiscan_key', newKey);
+    showToast('success', 'Arbiscan API Key saved!');
+  }, [showToast]);
 
   // Get Contract Instance (Signer or Provider)
   const getContract = useCallback(
@@ -63,19 +127,23 @@ export function WalletProvider({ children }) {
   // Fetch Balance
   const fetchBalance = useCallback(async (walletAddress, ethProvider) => {
     try {
-      if (!walletAddress || !ethProvider) return;
-      const balWei = await ethProvider.getBalance(walletAddress);
+      if (!walletAddress) return;
+      const activeProv = ethProvider || provider || getFallbackProvider();
+      const balWei = await activeProv.getBalance(walletAddress);
       setBalance(ethers.formatEther(balWei));
     } catch (err) {
       console.warn('Error fetching balance:', err);
     }
-  }, []);
+  }, [provider, getFallbackProvider]);
 
   // Fetch All Projects & Protocol Stats from Contract
   const refreshData = useCallback(async () => {
     try {
       setIsLoadingData(true);
       const contract = getContract();
+
+      // Check Network Health
+      checkNetworkHealth();
 
       // Fetch Protocol Stats
       try {
@@ -137,7 +205,6 @@ export function WalletProvider({ children }) {
           }
         }
 
-        // Sort by ID descending (newest first)
         setProjects(loadedProjects.reverse());
       } catch (projErr) {
         console.warn('Error fetching all projects:', projErr);
@@ -147,12 +214,12 @@ export function WalletProvider({ children }) {
     } finally {
       setIsLoadingData(false);
     }
-  }, [account, getContract]);
+  }, [account, getContract, checkNetworkHealth]);
 
-  // Connect Wallet
+  // Connect via MetaMask
   const connectWallet = async () => {
     if (typeof window.ethereum === 'undefined') {
-      showToast('error', 'MetaMask is not installed. Please install MetaMask to interact.');
+      showToast('error', 'MetaMask is not installed. You can also use Demo Private Key entry!');
       return;
     }
 
@@ -168,16 +235,50 @@ export function WalletProvider({ children }) {
       setSigner(ethSigner);
       setAccount(accounts[0]);
       setChainId(currentChainId);
+      setIsDemoWallet(false);
+      setActiveDemoAccount(null);
 
       const isSupported =
         currentChainId === ARBITRUM_SEPOLIA_CHAIN_ID || currentChainId === HARDHAT_CHAIN_ID;
       setIsWrongNetwork(!isSupported);
 
       await fetchBalance(accounts[0], browserProvider);
-      showToast('success', `Connected: ${accounts[0].substring(0, 6)}...${accounts[0].substring(38)}`);
+      showToast('success', `MetaMask Connected: ${accounts[0].substring(0, 6)}...${accounts[0].substring(38)}`);
     } catch (err) {
       console.error('Wallet connection error:', err);
       showToast('error', err.message || 'Failed to connect wallet');
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  // Connect via Demo Private Key (Arbitrum Sepolia or Local)
+  const connectWithPrivateKey = async (privateKey, label = 'Demo Account') => {
+    try {
+      setIsConnecting(true);
+      const cleanKey = privateKey.trim().startsWith('0x') ? privateKey.trim() : `0x${privateKey.trim()}`;
+      const activeProv = getFallbackProvider();
+      const demoWallet = new ethers.Wallet(cleanKey, activeProv);
+
+      setProvider(activeProv);
+      setSigner(demoWallet);
+      setAccount(demoWallet.address);
+      setChainId(ARBITRUM_SEPOLIA_CHAIN_ID);
+      setIsWrongNetwork(false);
+      setIsDemoWallet(true);
+
+      const matchedPreset = DEMO_ACCOUNTS.find(
+        (d) => d.address.toLowerCase() === demoWallet.address.toLowerCase()
+      );
+      setActiveDemoAccount(matchedPreset || { name: label, address: demoWallet.address });
+
+      await fetchBalance(demoWallet.address, activeProv);
+      showToast('success', `Connected as ${matchedPreset ? matchedPreset.name : 'Custom Demo Wallet'}: ${demoWallet.address.substring(0, 6)}...`);
+      return true;
+    } catch (err) {
+      console.error('Private key connection failed:', err);
+      showToast('error', `Invalid Private Key: ${err.message}`);
+      return false;
     } finally {
       setIsConnecting(false);
     }
@@ -217,10 +318,12 @@ export function WalletProvider({ children }) {
     setSigner(null);
     setBalance('0');
     setIsOwner(false);
+    setIsDemoWallet(false);
+    setActiveDemoAccount(null);
     showToast('info', 'Wallet disconnected');
   };
 
-  // Smart Contract Action: Create Project
+  // Smart Contract Actions
   const createProject = async (name, freelancerAddress, descriptions, amountsEth) => {
     if (!signer) throw new Error('Wallet not connected');
     setTxPending(true);
@@ -242,7 +345,6 @@ export function WalletProvider({ children }) {
     }
   };
 
-  // Smart Contract Action: Fund Project
   const fundProject = async (projectId, totalAmountWei) => {
     if (!signer) throw new Error('Wallet not connected');
     setTxPending(true);
@@ -253,7 +355,7 @@ export function WalletProvider({ children }) {
       const receipt = await tx.wait();
       showToast('success', `Project #${projectId} funded! Escrow locked in contract.`, receipt.hash);
       await refreshData();
-      if (account && provider) fetchBalance(account, provider);
+      if (account) fetchBalance(account);
       return receipt;
     } catch (error) {
       console.error('fundProject error:', error);
@@ -264,7 +366,6 @@ export function WalletProvider({ children }) {
     }
   };
 
-  // Smart Contract Action: Submit Milestone
   const submitMilestone = async (projectId, milestoneIndex) => {
     if (!signer) throw new Error('Wallet not connected');
     setTxPending(true);
@@ -273,7 +374,7 @@ export function WalletProvider({ children }) {
       const tx = await contract.submitMilestone(projectId, milestoneIndex);
       showToast('info', 'Submitting milestone completion...', tx.hash);
       const receipt = await tx.wait();
-      showToast('success', `Milestone #${milestoneIndex + 1} submitted for client review!`, receipt.hash);
+      showToast('success', `Milestone #${milestoneIndex + 1} submitted for review!`, receipt.hash);
       await refreshData();
       return receipt;
     } catch (error) {
@@ -285,7 +386,6 @@ export function WalletProvider({ children }) {
     }
   };
 
-  // Smart Contract Action: Approve Milestone (Triggers 0.05% fee + 99.95% payout)
   const approveMilestone = async (projectId, milestoneIndex) => {
     if (!signer) throw new Error('Wallet not connected');
     setTxPending(true);
@@ -294,9 +394,9 @@ export function WalletProvider({ children }) {
       const tx = await contract.approveMilestone(projectId, milestoneIndex);
       showToast('info', 'Approving milestone & releasing payment...', tx.hash);
       const receipt = await tx.wait();
-      showToast('success', `Milestone #${milestoneIndex + 1} approved! 99.95% paid to freelancer, 0.05% protocol fee collected.`, receipt.hash);
+      showToast('success', `Milestone #${milestoneIndex + 1} approved! 99.95% sent to freelancer, 0.05% protocol fee collected.`, receipt.hash);
       await refreshData();
-      if (account && provider) fetchBalance(account, provider);
+      if (account) fetchBalance(account);
       return receipt;
     } catch (error) {
       console.error('approveMilestone error:', error);
@@ -307,7 +407,6 @@ export function WalletProvider({ children }) {
     }
   };
 
-  // Smart Contract Action: Cancel Project
   const cancelProject = async (projectId) => {
     if (!signer) throw new Error('Wallet not connected');
     setTxPending(true);
@@ -318,7 +417,7 @@ export function WalletProvider({ children }) {
       const receipt = await tx.wait();
       showToast('success', `Project #${projectId} cancelled. Remaining escrow refunded to client.`, receipt.hash);
       await refreshData();
-      if (account && provider) fetchBalance(account, provider);
+      if (account) fetchBalance(account);
       return receipt;
     } catch (error) {
       console.error('cancelProject error:', error);
@@ -329,7 +428,6 @@ export function WalletProvider({ children }) {
     }
   };
 
-  // Smart Contract Action: Withdraw Protocol Fees (Owner only)
   const withdrawProtocolFees = async (recipientAddress) => {
     if (!signer) throw new Error('Wallet not connected');
     setTxPending(true);
@@ -340,7 +438,7 @@ export function WalletProvider({ children }) {
       const receipt = await tx.wait();
       showToast('success', 'Accumulated protocol fees withdrawn successfully!', receipt.hash);
       await refreshData();
-      if (account && provider) fetchBalance(account, provider);
+      if (account) fetchBalance(account);
       return receipt;
     } catch (error) {
       console.error('withdrawProtocolFees error:', error);
@@ -351,9 +449,9 @@ export function WalletProvider({ children }) {
     }
   };
 
-  // Listen to Account and Network changes
+  // Listen to MetaMask account / chain changes
   useEffect(() => {
-    if (window.ethereum) {
+    if (window.ethereum && !isDemoWallet) {
       const handleAccountsChanged = (accounts) => {
         if (accounts.length > 0) {
           setAccount(accounts[0]);
@@ -380,9 +478,9 @@ export function WalletProvider({ children }) {
         window.ethereum.removeListener('chainChanged', handleChainChanged);
       };
     }
-  }, [provider, fetchBalance]);
+  }, [provider, fetchBalance, isDemoWallet]);
 
-  // Initial Data Load
+  // Initial Data Load & Network Check
   useEffect(() => {
     refreshData();
   }, [refreshData]);
@@ -397,14 +495,23 @@ export function WalletProvider({ children }) {
     contractOwner,
     isConnecting,
     isWrongNetwork,
+    isDemoWallet,
+    activeDemoAccount,
+    rpcUrl,
+    arbiscanApiKey,
+    networkHealth,
     projects,
     protocolStats,
     isLoadingData,
     txPending,
     toastMessage,
     connectWallet,
+    connectWithPrivateKey,
     disconnectWallet,
     switchToArbitrumSepolia,
+    updateRpcUrl,
+    updateArbiscanApiKey,
+    checkNetworkHealth,
     refreshData,
     createProject,
     fundProject,

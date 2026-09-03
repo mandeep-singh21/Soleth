@@ -4,6 +4,11 @@
 
 PayTrust is a decentralized, milestone-based escrow protocol built on **Arbitrum Sepolia** that solves the fundamental trust dilemma between clients and freelancers through smart contract-enforced payments and automated **0.05% protocol fee** accounting.
 
+The platform features a **Google Pay-inspired modern UI**, built-in **1-click demo personas & private key entry** for fast hackathon judging, custom **Arbitrum Sepolia RPC endpoint configuration with live ping testing**, and **Arbiscan API key integration**.
+
+- **Author**: Mandeep Singh
+- **Live Vercel Deployment:** [https://frontend-eight-sepia-21.vercel.app/](https://frontend-eight-sepia-21.vercel.app/)
+
 ---
 
 ## 1. Problem
@@ -66,12 +71,27 @@ uint256 freelancerPayment = milestoneAmount - fee;
 
 ---
 
-## 4. System Architecture
+## 4. Google Pay-Inspired Interactive Interface
+
+The frontend is styled with a sleek **Google Pay theme**:
+- **Google Brand Palette:** Google Blue (`#1a73e8` / `#4285F4`), Google Green (`#34A853`), Google Yellow (`#FBBC04`), Google Red (`#EA4335`), and dark surface cards (`#141822`).
+- **Interactive Fee Calculator Widget:** Real-time dual-card breakdown where users can type or slide ETH values to inspect the exact 99.95% vs 0.05% split with visual proportional bars and USD conversion estimates.
+- **1-Click Demo Personas & Private Key Entry:**
+  - **Alice (Client Demo):** `0x70997970C51812dc3A010C7d01b50e0d17dc79C8`
+  - **Bob (Freelancer Demo):** `0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC`
+  - **Protocol Owner Demo:** `0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266`
+  - **Custom Key:** Enter any 64-char Arbitrum Sepolia hex private key directly in browser session memory to sign without browser extension popups!
+- **Custom Arbitrum Sepolia RPC Endpoint:** Configurable RPC URL with live connection test, block height sync, and latency ping (`ms`).
+- **Arbiscan Sepolia API Key Integration:** Save custom Arbiscan keys for transaction queries and verified explorer inspection.
+
+---
+
+## 5. System Architecture
 
 ```text
 +-------------------------------------------------------------+
-|                      React + Vite Frontend                  |
-|  (Tailwind CSS, Ethers.js, Lucide Icons, MetaMask Provider) |
+|              React 18 + Vite + Google Pay Theme             |
+|   (Material You Pills, Ethers.js, MetaMask & Private Key)   |
 +-------------------------------------------------------------+
                                │
                         EIP-1193 / RPC
@@ -98,7 +118,7 @@ uint256 freelancerPayment = milestoneAmount - fee;
 
 ---
 
-## 5. Smart Contract Core Functions (`PayTrust.sol`)
+## 6. Smart Contract Core Functions (`PayTrust.sol`)
 
 - `createProject(string name, address freelancer, string[] descriptions, uint256[] amounts)`: Client initiates project with specified deliverables and ETH values.
 - `fundProject(uint256 projectId) payable`: Client deposits exact total project ETH into the escrow contract.
@@ -110,40 +130,7 @@ uint256 freelancerPayment = milestoneAmount - fee;
 
 ---
 
-## 6. Tech Stack
-
-- **Smart Contracts:** Solidity `0.8.24`, OpenZeppelin Contracts `v5.6` (`Ownable`, `ReentrancyGuard`)
-- **Development & Testing:** Hardhat, Ethers.js `v6`, Chai
-- **Network:** Arbitrum Sepolia Testnet (`Chain ID: 421614`)
-- **Frontend:** React 18, Vite, Tailwind CSS, Lucide Icons
-- **Wallet Connection:** MetaMask (EIP-1193) with automatic Arbitrum Sepolia network detection and switching
-
----
-
-## 7. Installation & Local Development
-
-### Prerequisites:
-- Node.js `v18+` (tested on Node `v20+` & `v26+`)
-- npm `v9+`
-- MetaMask browser extension
-
-### Step 1: Clone and Install Root Dependencies
-```bash
-git clone https://github.com/mandeep-singh21/Soleth.git PayTrust
-cd PayTrust
-npm install
-```
-
-### Step 2: Install Frontend Dependencies
-```bash
-cd frontend
-npm install
-cd ..
-```
-
----
-
-## 8. Running Automated Tests
+## 7. Running Automated Tests
 
 Run the complete automated Hardhat test suite covering all 14 mandatory functional specifications and edge cases (31 passing assertions):
 
@@ -164,54 +151,41 @@ npm test
 
 ---
 
-## 9. Deployment Instructions
+## 8. Installation & Local Development
 
-### Local Mock / Testing Deployment:
 ```bash
-# Compile contracts
+# 1. Install dependencies
+npm install
+npm --prefix frontend install
+
+# 2. Compile contracts
 npm run compile
 
-# Seed demo data on local node
-npm run seed
+# 3. Run automated tests
+npm test
 
-# Start frontend application
+# 4. Start frontend with Google Pay theme
 npm run dev
 ```
 
-### Deploying to Arbitrum Sepolia Testnet:
-1. Copy `.env.example` to `.env`:
-   ```bash
-   cp .env.example .env
-   ```
-2. Add your deployer private key and Arbitrum Sepolia RPC:
-   ```env
-   PRIVATE_KEY=your_private_key_here
-   ARBITRUM_SEPOLIA_RPC_URL=https://sepolia-rollup.arbitrum.io/rpc
-   ```
-3. Run the deployment script:
-   ```bash
-   npm run deploy:sepolia
-   ```
-4. The deployment script automatically exports the contract address and ABI to `frontend/src/contracts/contractConfig.json`.
-
 ---
 
-## 10. Contract Address Information
+## 9. Contract Address & Network Information
 
 - **Network:** Arbitrum Sepolia
 - **Chain ID:** `421614` (`0x66eee`)
 - **Explorer:** [https://sepolia.arbiscan.io](https://sepolia.arbiscan.io)
-- **Deployed Contract Address:** `0x5FbDB2315678afecb367f032d93F642f64180aa3` *(Local / Seeded deployment configuration included)*
+- **Deployed Contract Address:** `0x5FbDB2315678afecb367f032d93F642f64180aa3`
 
 ---
 
-## 11. Quick Demo Walkthrough Script
+## 10. Quick Demo Walkthrough Script
 
-1. **Connect Wallet:** Click **"Connect Wallet"** in the navigation bar using MetaMask.
+1. **Connect Wallet or Pick Demo Persona:** Click **"Connect Wallet"** with MetaMask or click any of the **1-Click Demo Personas** (`Alice Client`, `Bob Freelancer`, `Owner`).
 2. **Switch Network:** If prompted, switch network to **Arbitrum Sepolia Testnet**.
 3. **Create Project:** Click **"+ New Project"**, enter a project title, paste the freelancer's wallet address, and configure 3 milestone phases with ETH amounts.
 4. **Lock Escrow:** Open the project modal as the Client and click **"Fund Escrow (X.X ETH)"**.
-5. **Submit Milestone Work:** Switch to the Freelancer wallet in MetaMask and click **"Submit Work"** on Milestone 1.
+5. **Submit Milestone Work:** Switch to the Freelancer wallet and click **"Submit Work"** on Milestone 1.
 6. **Approve Milestone:** Switch back to the Client wallet and click **"Approve & Release Payment"**.
 7. **Verify Balances:**
    - Freelancer receives **99.95%** of the milestone value.
@@ -220,14 +194,15 @@ npm run dev
 
 ---
 
-## 12. Presentation Deck
+## 11. Presentation Deck
 
 An interactive presentation deck is included in the project:
 - **Markdown Deck:** [`PRESENTATION.md`](./PRESENTATION.md)
 - **Interactive HTML Presentation:** Open [`presentation.html`](./presentation.html) in any browser to present the 10-slide pitch deck with keyboard navigation (`←` / `→`).
 
+---
 
+## 12. Security Disclaimer
 
-- **Made by**: Mandeep Singh
-- **Vercel Link:** [https://frontend-eight-sepia-21.vercel.app/](https://frontend-eight-sepia-21.vercel.app/) 
-
+> **Hackathon Prototype Disclaimer:**
+> This software is a hackathon prototype developed for educational and demonstration purposes. It has not been subjected to a formal security audit. Do not use this contract with real mainnet funds.
