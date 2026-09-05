@@ -59,9 +59,7 @@ export default function Navbar({
                 <span className="text-xl font-bold tracking-tight text-white">
                   Pay<span className="text-[#4285F4]">Trust</span>
                 </span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-[#34A853]/15 text-[#81c995] font-mono font-bold">
-                  GPay UI
-                </span>
+                
               </div>
               <span className="block text-[10px] text-slate-400 font-mono tracking-wider font-semibold">
                 ARBITRUM MILESTONE ESCROW

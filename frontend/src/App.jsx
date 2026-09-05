@@ -158,8 +158,7 @@ function MainApp() {
 
           <div className="text-center text-slate-500 text-[11px] flex items-center justify-center gap-2">
             <span>© {new Date().getFullYear()} PayTrust Protocol</span>
-            <span>•</span>
-            <span className="google-gradient-text font-semibold">Google Pay Theme</span>
+            
             <span>•</span>
             <span>Trust the work. Trust the code.</span>
           </div>
