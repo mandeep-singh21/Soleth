@@ -29,7 +29,7 @@ export default function DemoWalletBar({ onOpenSettings }) {
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-slate-400 font-semibold flex items-center gap-1">
             <Zap className="w-3.5 h-3.5 text-[#FBBC04]" />
-            <span>Hackathon Quick Roles:</span>
+            <span>Quick Roles Access:</span>
           </span>
 
           {DEMO_ACCOUNTS.map((persona, idx) => {
